@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            width: 600px;
+            margin: 2px auto;
+            color: black;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #2196F3;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+
+        .content {
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .footer {
+            background-color: #2196F3;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 20px 0;
+            background-color: #2196F3;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        @media screen and (max-width: 600px) {
+            .container {
+                width: 100%;
+                margin: 0;
+                border-radius: 0;
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome!</h1>
+        </div>
+        <div class="content">
+            <p>Hello <%= username %>,</p>
+            <p>Thank you for registering for our service. Here is your account information:</p>
+            <ul>
+                <li><strong>Name: </strong>
+                    <%= fullname %>
+                </li>
+                <li><strong>Email: </strong>
+                    <%= email %>
+                </li>
+                <li><strong>Registration Date: </strong>
+                    <%= createdAt %>
+                </li>
+            </ul>
+            <p>To start using our service, please click the following link:</p>
+            <div style="display: flex; justify-content: center; align-items: center;">
+                <a href="<%= activationLink %>" class="button">Activate Account</a>
+            </div>
+            <p>If you have any further questions, please contact our team.</p>
+            <p>Best regards, CalorieMate</p>
+        </div>
+        <div class="footer">
+            <p>&copy; <span id="year"></span> CalorieMate. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+</body>
+
+</html>
