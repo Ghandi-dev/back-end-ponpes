@@ -1,7 +1,8 @@
 import { pgTable, serial, text, varchar, boolean, timestamp, date, uniqueIndex } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { ROLES } from "../utils/enum";
 import { z } from "zod";
+import { santri } from "./santri.model";
 
 export const user = pgTable(
   "users",
@@ -25,6 +26,12 @@ export const user = pgTable(
   },
   (table) => [uniqueIndex("idx_user_email").on(table.email)]
 );
+
+export type TypeUser = typeof user.$inferInsert;
+
+export const userRealations = relations(user, ({ one }) => ({
+  santri: one(santri),
+}));
 
 const validatePassword = z
   .string()

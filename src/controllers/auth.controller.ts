@@ -1,16 +1,35 @@
 import { IReqUser } from "../utils/interface";
 import { Response } from "express";
 import response from "../utils/response";
-import { createUser, getUserByIdentifier, userActivate } from "../service/user.service";
+import { createUser, getUserByIdentifier, updateUser, userActivate } from "../service/user.service";
 import { encrypt } from "../utils/encryption";
 import { generateToken } from "../utils/jwt";
-import { userDTO, userLoginDTO } from "../models";
+import { TypeUser, userDTO, userLoginDTO, userUpdatePasswordDTO } from "../models";
+import { renderMailHtml, sendMail } from "../utils/mail/mail";
+import { CLIENT_HOST, EMAIL_SMTP_USER } from "../utils/env";
 export default {
   async register(req: IReqUser, res: Response) {
     try {
       const { fullname, email, password, confirmPassword } = req.body;
+      // validate request
       userDTO.parse({ fullname, email, password, confirmPassword });
-      const user = await createUser(fullname, email, password);
+      // create user
+      const user = (await createUser(fullname, email, password)) as unknown as TypeUser;
+      // send email activation
+      console.log("send email activation", user.email);
+      const contentMail = await renderMailHtml("registration-success.ejs", {
+        fullname: user.fullname,
+        email: user.email,
+        activationCode: user.activationCode,
+        createdAt: user.createdAt,
+        activationLink: `${CLIENT_HOST}/auth/activation?code=${user.activationCode}`,
+      });
+      await sendMail({
+        from: EMAIL_SMTP_USER,
+        to: user.email,
+        subject: "Registration Success",
+        html: contentMail,
+      });
       response.success(res, user, "Register Success");
     } catch (error) {
       response.error(res, error, "Error Register");
@@ -62,6 +81,42 @@ export default {
       response.success(res, result, "Success get user data");
     } catch (error) {
       response.error(res, error, "Failed to get user data");
+    }
+  },
+  async updateProfile(req: IReqUser, res: Response) {
+    try {
+      const user = req.user;
+
+      if (!user) {
+        return response.unauthorized(res, "User not found");
+      }
+      const data = req.body;
+      if (data.password) {
+        return response.error(res, null, "Password cannot be updated here");
+      }
+      const result = await updateUser(user.id, data);
+      return response.success(res, result, "Update Profile Success");
+    } catch (error) {
+      response.error(res, error, "Error Update Profile");
+    }
+  },
+  async updatePassword(req: IReqUser, res: Response) {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return response.unauthorized(res, "User not found");
+      }
+      const { oldPassword, password, confirmPassword } = req.body;
+      userUpdatePasswordDTO.parse({ oldPassword, password, confirmPassword });
+      const user = await getUserByIdentifier({ id: userId });
+      if (!user || user.password !== encrypt(oldPassword)) {
+        return response.unauthorized(res, "User not found or invalid old password");
+      }
+      const result = await updateUser(userId, { password: encrypt(password) });
+      return response.success(res, result, "Update Password Success");
+    } catch (error) {
+      response.error(res, error, "Error Update Password");
     }
   },
 };

@@ -8,9 +8,9 @@
     "dev": "nodemon src/index.ts",
     "docs": "ts-node src/docs/swagger.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit up",
+    "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:status": "drizzle-kit status",
+    "db:check": "npx drizzle-kit check",
     "db:studio": "npx drizzle-kit studio"
   },
   "keywords": [],
