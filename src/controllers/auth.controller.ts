@@ -1,7 +1,7 @@
 import { IReqUser } from "../utils/interface";
 import { Response } from "express";
 import response from "../utils/response";
-import { createUser, getUserByIdentifier, updateUser, userActivate } from "../service/user.service";
+import { createUser, getMe, getUserByIdentifier, updateUser, userActivate } from "../service/user.service";
 import { encrypt } from "../utils/encryption";
 import { generateToken } from "../utils/jwt";
 import { TypeUser, userDTO, userLoginDTO, userUpdatePasswordDTO } from "../models";
@@ -18,7 +18,7 @@ export default {
       // send email activation
       console.log("send email activation", user.email);
       const contentMail = await renderMailHtml("registration-success.ejs", {
-        fullname: user.fullname,
+        fullname: fullname,
         email: user.email,
         activationCode: user.activationCode,
         createdAt: user.createdAt,
@@ -74,7 +74,7 @@ export default {
   async me(req: IReqUser, res: Response) {
     try {
       const user = req.user;
-      const result = await getUserByIdentifier({ id: user?.id });
+      const result = await getMe(user?.id!);
       if (!result) {
         return response.unauthorized(res, "User not found");
       }

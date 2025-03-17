@@ -2,7 +2,7 @@ import express from "express";
 import { PORT } from "./utils/env";
 import cors from "cors";
 import bodyParser from "body-parser";
-import router from "./routes/api";
+import router from "./routes/index";
 import errorMiddleware from "./middlewares/error.middleware";
 import { checkConnection } from "./db";
 
@@ -12,7 +12,7 @@ app.use(cors());
 
 app.use(bodyParser.json());
 
-app.use(router);
+app.use("/api", router);
 
 app.get("/", (req, res) => {
   res.status(200).json({

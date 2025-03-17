@@ -8,7 +8,6 @@ export const user = pgTable(
   "users",
   {
     id: serial("id").primaryKey(),
-    fullname: text("fullname").notNull(),
     email: varchar("email", { length: 100 }).notNull().unique(),
     password: text("password").notNull(),
     role: text("role", { enum: [ROLES.ADMIN, ROLES.SANTRI] })
@@ -29,7 +28,7 @@ export const user = pgTable(
 
 export type TypeUser = typeof user.$inferInsert;
 
-export const userRealations = relations(user, ({ one }) => ({
+export const userRelations = relations(user, ({ one }) => ({
   santri: one(santri),
 }));
 
