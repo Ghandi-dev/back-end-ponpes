@@ -2,7 +2,8 @@ import { Response } from "express";
 import { IReqUser } from "../utils/interface";
 import response from "../utils/response";
 import { deleteSantri, findManySantri, findOneSantri, updateSantri } from "../service/santri.service";
-import { santriUpdateDTO } from "../models";
+import { santriUpdateDTO, TypeSantri } from "../models";
+import { STATUS_SANTRI } from "../utils/enum";
 
 export default {
   async create(req: IReqUser, res: Response) {},
@@ -52,7 +53,14 @@ export default {
   async update(req: IReqUser, res: Response) {
     try {
       const { id } = req.params;
-      const data = req.body;
+      const data = req.body as Partial<TypeSantri>;
+      if (data.status) {
+        return response.error(res, null, "Status cannot be updated");
+      }
+      const santri = await findOneSantri(+id);
+      if (!santri) {
+        return response.notFound(res, "Santri not found");
+      }
       const result = await updateSantri(+id, data);
       response.success(res, result, "Update Santri Success");
     } catch (error) {
@@ -61,10 +69,18 @@ export default {
   },
   async updateMe(req: IReqUser, res: Response) {
     try {
-      const santri = req.user;
-      const data = req.body;
+      const user = req.user;
+      const data = req.body as Partial<TypeSantri>;
+      if (data.status) {
+        return response.error(res, null, "Status cannot be updated");
+      }
       santriUpdateDTO.parse(data);
-      const result = await updateSantri(santri?.id!, data);
+      const santri = await findOneSantri(user?.id!);
+      const result = await updateSantri(
+        user?.id!,
+        data,
+        santri?.status === STATUS_SANTRI.PENDING_REGISTRATION ? STATUS_SANTRI.COMPLETED_PROFILE : santri?.status
+      );
       response.success(res, result, "Update Profile Santri Success");
     } catch (error) {
       response.error(res, error, "Error Update Profile Santri");

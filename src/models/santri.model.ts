@@ -3,6 +3,7 @@ import { user } from "./user.model"; // Pastikan path sesuai dengan file schema 
 import { GENDERS, STATUS_SANTRI } from "../utils/enum";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
+import { address } from "./address.model";
 
 export const santri = pgTable("santri", {
   id: serial("id").primaryKey(),
@@ -35,7 +36,10 @@ export const santri = pgTable("santri", {
 
 export type TypeSantri = typeof santri.$inferSelect;
 
-export const santriRelations = relations(santri, ({ one }) => ({ user: one(user, { fields: [santri.userId], references: [user.id] }) }));
+export const santriRelations = relations(santri, ({ one }) => ({
+  user: one(user, { fields: [santri.userId], references: [user.id] }),
+  address: one(address, { fields: [santri.id], references: [address.userId] }),
+}));
 
 export const santriDTO = z.object({
   placeOfBirth: z.string().min(1, "Place of birth is required"),

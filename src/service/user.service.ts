@@ -65,7 +65,7 @@ export const getMe = async (id: number) => {
   return db.query.user.findFirst({
     where: eq(user.id, id),
     with: { santri: true },
-    columns: { email: true, role: true },
+    columns: { email: true, role: true, profilePicture: true },
   });
 };
 

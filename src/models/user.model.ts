@@ -13,7 +13,7 @@ export const user = pgTable(
     role: text("role", { enum: [ROLES.ADMIN, ROLES.SANTRI] })
       .default(ROLES.SANTRI)
       .notNull(),
-    profilePicture: text("profile_picture").default("user.jpg"),
+    profilePicture: text("profile_picture").default("https://res.cloudinary.com/diton4fcf/image/upload/v1742373868/avatar-1_ksjehz.svg"),
     isActive: boolean("is_active").default(false),
     activationCode: text("activation_code"),
     createdAt: timestamp("created_at")
