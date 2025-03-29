@@ -4,19 +4,20 @@ import { relations } from "drizzle-orm";
 
 export const address = pgTable("address", {
   id: serial("id").primaryKey(),
-  userId: integer("santri_id")
+  santriId: integer("santri_id")
     .references(() => santri.id, { onDelete: "cascade" })
-    .notNull(),
+    .notNull()
+    .unique(),
   address: text("address").notNull(),
   rt: text("rt").notNull(),
   rw: text("rw").notNull(),
-  province: integer("province").notNull(),
-  city: integer("city").notNull(),
-  district: integer("district").notNull(),
-  village: integer("village").notNull(),
-  postalCode: numeric("postal_code").notNull(),
+  province: text("province").notNull(),
+  city: text("city").notNull(),
+  district: text("district").notNull(),
+  village: text("village").notNull(),
+  postalCode: text("postal_code").notNull(),
 });
 
-export type TypeAddress = typeof address.$inferSelect;
+export type TypeAddress = typeof address.$inferInsert;
 
-export const addressRelations = relations(address, ({ one }) => ({ santri: one(santri, { fields: [address.userId], references: [santri.id] }) }));
+export const addressRelations = relations(address, ({ one }) => ({ santri: one(santri, { fields: [address.santriId], references: [santri.id] }) }));

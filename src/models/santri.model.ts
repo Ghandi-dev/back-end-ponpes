@@ -4,12 +4,14 @@ import { GENDERS, STATUS_SANTRI } from "../utils/enum";
 import { relations } from "drizzle-orm";
 import { z } from "zod";
 import { address } from "./address.model";
+import { payment } from "./payment.model";
 
 export const santri = pgTable("santri", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
     .references(() => user.id, { onDelete: "cascade" })
-    .notNull(),
+    .notNull()
+    .unique(),
   fullname: text("fullname").notNull(),
   placeOfBirth: varchar("place_of_birth", { length: 255 }),
   dateOfBirth: date("date_of_birth"),
@@ -24,6 +26,8 @@ export const santri = pgTable("santri", {
     enum: [
       STATUS_SANTRI.PENDING_REGISTRATION,
       STATUS_SANTRI.COMPLETED_PROFILE,
+      STATUS_SANTRI.COMPLETED_ADDRESS,
+      STATUS_SANTRI.COMPLETED_FILE,
       STATUS_SANTRI.PAYMENT_PENDING,
       STATUS_SANTRI.PAYMENT_CONFIRMED,
       STATUS_SANTRI.RE_REGISTRATION_PENDING,
@@ -34,11 +38,12 @@ export const santri = pgTable("santri", {
   }).notNull(),
 });
 
-export type TypeSantri = typeof santri.$inferSelect;
+export type TypeSantri = typeof santri.$inferInsert;
 
-export const santriRelations = relations(santri, ({ one }) => ({
+export const santriRelations = relations(santri, ({ one, many }) => ({
   user: one(user, { fields: [santri.userId], references: [user.id] }),
-  address: one(address, { fields: [santri.id], references: [address.userId] }),
+  address: one(address, { fields: [santri.id], references: [address.santriId] }),
+  payment: many(payment),
 }));
 
 export const santriDTO = z.object({

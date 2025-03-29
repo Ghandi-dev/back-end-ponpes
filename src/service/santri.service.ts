@@ -1,9 +1,9 @@
-import { count, eq, like } from "drizzle-orm";
+import { and, count, eq, like, SQL } from "drizzle-orm";
 import { db } from "../db";
 import { santri, TypeSantri } from "../models";
 import { STATUS_SANTRI } from "../utils/enum";
 
-export const updateSantri = async (id: number, data: Partial<TypeSantri>, status?: STATUS_SANTRI) => {
+export const updateSantri = async (id: number, data?: Partial<TypeSantri>, status?: STATUS_SANTRI) => {
   return await db
     .update(santri)
     .set({ ...data, status: status })
@@ -11,9 +11,12 @@ export const updateSantri = async (id: number, data: Partial<TypeSantri>, status
     .returning();
 };
 
-export const findOneSantri = async (id: number) => {
+export const findOneSantri = async ({ id, userId }: { id?: number; userId?: number }) => {
+  const filters: SQL[] = [];
+  if (id) filters.push(eq(santri.id, id));
+  if (userId) filters.push(eq(santri.userId, userId));
   return await db.query.santri.findFirst({
-    where: eq(santri.id, id),
+    where: and(...filters),
   });
 };
 

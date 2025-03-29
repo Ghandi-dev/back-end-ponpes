@@ -54,7 +54,7 @@ export const findManyUser = async (page: number = 1, limit: number = 10, search?
   };
 };
 
-export const getUserByIdentifier = async ({ id, email }: { id?: number; email?: string }) => {
+export const getUserByIdentifier = async ({ id, email, userId }: { id?: number; email?: string; userId?: number }) => {
   const filters: SQL[] = [];
   if (id) filters.push(eq(user.id, id));
   if (email) filters.push(eq(user.email, email));

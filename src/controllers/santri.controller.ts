@@ -28,7 +28,7 @@ export default {
   async findOne(req: IReqUser, res: Response) {
     try {
       const { id } = req.params;
-      const santri = await findOneSantri(+id);
+      const santri = await findOneSantri({ id: +id });
       if (!santri) {
         return response.notFound(res, "Santri not found");
       }
@@ -39,9 +39,9 @@ export default {
   },
   async me(req: IReqUser, res: Response) {
     try {
-      const santri = req.user;
-      const result = await findOneSantri(santri?.id as number);
+      const santriId = req.user?.santriId;
 
+      const result = await findOneSantri({ id: santriId as number });
       if (!result) {
         return response.unauthorized(res, "Santri not found");
       }
@@ -57,7 +57,7 @@ export default {
       if (data.status) {
         return response.error(res, null, "Status cannot be updated");
       }
-      const santri = await findOneSantri(+id);
+      const santri = await findOneSantri({ id: +id });
       if (!santri) {
         return response.notFound(res, "Santri not found");
       }
@@ -69,15 +69,16 @@ export default {
   },
   async updateMe(req: IReqUser, res: Response) {
     try {
-      const user = req.user;
+      const santriId = req.user?.santriId;
       const data = req.body as Partial<TypeSantri>;
       if (data.status) {
         return response.error(res, null, "Status cannot be updated");
       }
+
       santriUpdateDTO.parse(data);
-      const santri = await findOneSantri(user?.id!);
+      const santri = await findOneSantri({ id: santriId });
       const result = await updateSantri(
-        user?.id!,
+        santriId!,
         data,
         santri?.status === STATUS_SANTRI.PENDING_REGISTRATION ? STATUS_SANTRI.COMPLETED_PROFILE : santri?.status
       );

@@ -7,6 +7,7 @@ import { generateToken } from "../utils/jwt";
 import { TypeUser, userDTO, userLoginDTO, userUpdatePasswordDTO } from "../models";
 import { renderMailHtml, sendMail } from "../utils/mail/mail";
 import { CLIENT_HOST, EMAIL_SMTP_USER } from "../utils/env";
+import { findOneSantri } from "../service/santri.service";
 export default {
   async register(req: IReqUser, res: Response) {
     try {
@@ -50,9 +51,12 @@ export default {
       if (!validatePassword) {
         return response.unauthorized(res, "Invalid credentials");
       }
+      const santri = await findOneSantri({ userId: user.id });
+
       const token = generateToken({
         id: user.id,
         role: user.role,
+        santriId: santri?.id!,
       });
       response.success(res, token, "Login Success");
     } catch (error) {

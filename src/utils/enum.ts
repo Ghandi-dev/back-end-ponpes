@@ -11,6 +11,8 @@ export enum ROLES {
 export enum STATUS_SANTRI {
   PENDING_REGISTRATION = "pending_registration", // Akun baru dibuat, belum mengisi data pribadi
   COMPLETED_PROFILE = "completed_profile", // Sudah mengisi data pribadi
+  COMPLETED_ADDRESS = "completed_address", // Sudah mengisi data alamat
+  COMPLETED_FILE = "completed_file", // Sudah mengisi data file
   PAYMENT_PENDING = "payment_pending", // Menunggu pembayaran pendaftaran
   PAYMENT_CONFIRMED = "payment_confirmed", // Pembayaran dikonfirmasi
   RE_REGISTRATION_PENDING = "re_registration_pending", // Menunggu daftar ulang
