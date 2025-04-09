@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { InsertUserSchemaType, santri, UpdateSantriSchemaType, UpdateUserSchemaType, users } from "../models";
+import { admins, InsertUserSchemaType, santri, UpdateSantriSchemaType, UpdateUserSchemaType, users } from "../models";
 import { and, count, eq, like } from "drizzle-orm";
 import { encrypt } from "../utils/encryption";
 import { ROLES, SANTRI_STATUS } from "../utils/enum";
@@ -27,6 +27,30 @@ const userService = {
         status: SANTRI_STATUS.PENDING_REGISTRATION,
       });
 
+      return user;
+    });
+  },
+
+  registerAdmin: async (dataUser: InsertUserSchemaType, fullname: string) => {
+    return await db.transaction(async (tx) => {
+      const hashedPassword = encrypt(dataUser.password);
+      const activationCode = encrypt(dataUser.email);
+
+      const [user] = await tx
+        .insert(users)
+        .values({
+          email: dataUser.email,
+          password: hashedPassword,
+          role: ROLES.ADMIN,
+          isActive: true,
+          activationCode,
+        })
+        .returning();
+
+      await tx.insert(admins).values({
+        userId: user.id,
+        fullname,
+      });
       return user;
     });
   },
@@ -66,7 +90,7 @@ const userService = {
     return await db.query.users.findFirst({ where: and(...filters) });
   },
 
-  findMe: async (id: number) => {
+  findMe: async (id: number, userRole: string) => {
     return await db.query.users.findFirst({
       where: eq(users.id, id),
       columns: {
@@ -74,7 +98,7 @@ const userService = {
         role: true,
         profilePicture: true,
       },
-      with: { santri: true },
+      with: userRole === ROLES.ADMIN ? { admin: true } : { santri: true },
     });
   },
 
@@ -84,27 +108,8 @@ const userService = {
     return (await db.update(users).set({ isActive: true }).where(eq(users.id, user.id)).returning()).at(0);
   },
 
-  update: async (id: number, data: UpdateUserSchemaType & UpdateSantriSchemaType) => {
-    return await db.transaction(async (tx) => {
-      const { email, password, role, ...santriData } = data;
-
-      if (email || password || role) {
-        await tx.update(users).set({ email, password, role }).where(eq(users.id, id));
-      }
-
-      if (Object.keys(santriData).length > 0) {
-        await tx.update(santri).set(santriData).where(eq(santri.userId, id));
-      }
-
-      return await db.query.users.findFirst({
-        where: eq(users.id, id),
-        columns: {
-          email: true,
-          profilePicture: true,
-        },
-        with: { santri: true },
-      });
-    });
+  update: async (id: number, data: UpdateUserSchemaType) => {
+    return (await db.update(users).set(data).where(eq(users.id, id)).returning()).at(0);
   },
 };
 

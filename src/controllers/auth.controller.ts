@@ -6,6 +6,7 @@ import { generateToken } from "../utils/jwt";
 import {
   registerUserSchema,
   SelectUserSchemaType,
+  updateAdminSchema,
   updatePasswordUserSchema,
   updateSantriSchema,
   UpdateSantriSchemaType,
@@ -16,6 +17,8 @@ import { renderMailHtml, sendMail } from "../utils/mail/mail";
 import { CLIENT_HOST, EMAIL_SMTP_USER } from "../utils/env";
 import userService from "../service/user.service";
 import santriService from "../service/santri.service";
+import { ROLES } from "../utils/enum";
+import adminsService from "../service/admin.service";
 export default {
   async register(req: IReqUser, res: Response) {
     try {
@@ -48,6 +51,19 @@ export default {
     }
   },
 
+  async registerAdmin(req: IReqUser, res: Response) {
+    try {
+      const { fullname, email, password, confirmPassword } = req.body;
+      const payload = { fullname, email, password, confirmPassword };
+      registerUserSchema.parse(payload);
+
+      const user = (await userService.registerAdmin(payload, fullname)) as SelectUserSchemaType;
+      response.success(res, user, "Register Success");
+    } catch (error) {
+      response.error(res, error, "Error Registering Admin");
+    }
+  },
+
   async login(req: IReqUser, res: Response) {
     try {
       const { email, password } = req.body;
@@ -59,13 +75,22 @@ export default {
       const isPasswordValid = encrypt(password) === user.password;
       if (!isPasswordValid) return response.unauthorized(res, "Invalid credentials");
 
-      const santri = await santriService.findOne({ userId: user.id });
-      if (!santri) return response.unauthorized(res, "Santri Not Found");
+      let identifier;
+
+      if (user.role === ROLES.ADMIN) {
+        const admin = await adminsService.findOne({ userId: user.id });
+        if (!admin) return response.unauthorized(res, "Admin Not Found");
+        identifier = admin.id;
+      } else {
+        const santri = await santriService.findOne({ userId: user.id });
+        if (!santri) return response.unauthorized(res, "Santri Not Found");
+        identifier = santri.id;
+      }
 
       const token = generateToken({
         id: user.id,
         role: user.role,
-        santriId: santri?.id,
+        identifier,
       });
 
       response.success(res, token, "Login Success");
@@ -92,7 +117,7 @@ export default {
       const userId = req.user?.id;
       if (!userId) return response.unauthorized(res, "User not found");
 
-      const result = await userService.findMe(userId);
+      const result = await userService.findMe(userId, req.user?.role!);
       if (!result) return response.unauthorized(res, "User not found");
 
       response.success(res, result, "Get User Data Success");
@@ -106,8 +131,7 @@ export default {
       const userId = req.user?.id;
       if (!userId) return response.unauthorized(res, "User not found");
 
-      const data: UpdateSantriSchemaType & UpdateUserSchemaType = req.body;
-      updateSantriSchema.parse(data);
+      const data: UpdateUserSchemaType = req.body;
       updateUserSchema.parse(data);
 
       if (data.password) {

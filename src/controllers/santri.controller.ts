@@ -40,7 +40,7 @@ export default {
   },
   async me(req: IReqUser, res: Response) {
     try {
-      const santriId = req.user?.santriId;
+      const santriId = req.user?.identifier;
 
       const result = await santriService.findOne({ id: santriId as number });
       if (!result) {
@@ -71,7 +71,7 @@ export default {
   },
   async updateMe(req: IReqUser, res: Response) {
     try {
-      const santriId = req.user?.santriId;
+      const santriId = req.user?.identifier;
       const data = req.body as UpdateSantriSchemaType;
       updateSantriSchema.parse(data);
       if (data.status) {

@@ -20,7 +20,7 @@ export default {
   },
   async createMe(req: IReqUser, res: Response) {
     try {
-      const santriId = req.user?.santriId;
+      const santriId = req.user?.identifier;
       if (!santriId) throw new Error("Santri ID is missing");
 
       const payload: InsertAddressSchemaType = {
@@ -53,7 +53,7 @@ export default {
 
   async findMe(req: IReqUser, res: Response) {
     try {
-      const santriId = req.user?.santriId;
+      const santriId = req.user?.identifier;
       if (!santriId) throw new Error("Santri ID is missing");
 
       const result = await addressService.findOne(santriId);
@@ -78,7 +78,7 @@ export default {
 
   async updateMe(req: IReqUser, res: Response) {
     try {
-      const santriId = req.user?.santriId;
+      const santriId = req.user?.identifier;
       if (!santriId) throw new Error("Santri ID is missing");
 
       const data: UpdateAddressSchemaType = req.body;

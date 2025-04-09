@@ -3,6 +3,7 @@ import { relations, sql } from "drizzle-orm";
 import { z } from "zod";
 import { santri } from "./santri.model";
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from "drizzle-zod";
+import { admins } from "./admin.model";
 
 // Role Enum
 export const USER_ROLES = {
@@ -35,6 +36,7 @@ export const users = pgTable(
 
 export const userRelations = relations(users, ({ one }) => ({
   santri: one(santri, { fields: [users.id], references: [santri.userId] }),
+  admin: one(admins, { fields: [users.id], references: [admins.userId] }),
 }));
 
 export const insertUserSchema = createInsertSchema(users);

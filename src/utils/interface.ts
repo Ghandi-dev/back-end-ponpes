@@ -12,7 +12,7 @@ export interface IUserToken
     "password" | "activationCode" | "isActive" | "email" | "fullname" | "profilePicture" | "createdAt" | "updatedAt"
   > {
   id: number;
-  santriId: number;
+  identifier: number;
 }
 
 export interface IPaginationQuery {

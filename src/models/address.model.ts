@@ -2,7 +2,6 @@ import { integer, numeric, pgTable, serial, text, timestamp } from "drizzle-orm/
 import { santri } from "./santri.model";
 import { relations, sql } from "drizzle-orm";
 import { createInsertSchema, createSelectSchema, createUpdateSchema } from "drizzle-zod";
-import { z } from "zod";
 
 export const address = pgTable("address", {
   id: serial("id").primaryKey(),

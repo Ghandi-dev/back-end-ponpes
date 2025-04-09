@@ -12,7 +12,7 @@ export default {
   async create(req: IReqUser, res: Response) {
     try {
       const data = req.body as InsertPaymentSchemaType;
-      const santriId = req.user?.santriId;
+      const santriId = req.user?.identifier;
       if (!santriId) throw new Error("Santri ID is missing");
 
       const month = new Date().getMonth() + 1;
@@ -46,7 +46,7 @@ export default {
 
   async findMeRegistration(req: IReqUser, res: Response) {
     try {
-      const santriId = req.user?.santriId;
+      const santriId = req.user?.identifier;
       if (!santriId) throw new Error("Santri ID is missing");
 
       const result = await paymentService.findOne({
@@ -71,7 +71,7 @@ export default {
         status: STATUS_PAYMENT.COMPLETED,
       });
 
-      const santriId = req.user?.santriId;
+      const santriId = req.user?.identifier;
       if (!santriId) throw new Error("Santri ID is missing");
 
       const santri = await santriService.findOne({ id: santriId });
