@@ -3,16 +3,7 @@ import { Response } from "express";
 import response from "../utils/response";
 import { encrypt } from "../utils/encryption";
 import { generateToken } from "../utils/jwt";
-import {
-  registerUserSchema,
-  SelectUserSchemaType,
-  updateAdminSchema,
-  updatePasswordUserSchema,
-  updateSantriSchema,
-  UpdateSantriSchemaType,
-  updateUserSchema,
-  UpdateUserSchemaType,
-} from "../models";
+import { registerUserSchema, SelectUserSchemaType, updatePasswordUserSchema, updateUserSchema, UpdateUserSchemaType } from "../models";
 import { renderMailHtml, sendMail } from "../utils/mail/mail";
 import { CLIENT_HOST, EMAIL_SMTP_USER } from "../utils/env";
 import userService from "../service/user.service";
@@ -134,8 +125,8 @@ export default {
       const data: UpdateUserSchemaType = req.body;
       updateUserSchema.parse(data);
 
-      if (data.password) {
-        return response.error(res, null, "Password cannot be updated here");
+      if (data.password || data.role || data.isActive || data.activationCode || data.createdAt) {
+        return response.error(res, null, "Cannot update password, role, isActive, activationCode, createdAt");
       }
 
       const result = await userService.update(userId, data);

@@ -41,7 +41,10 @@ export const userRelations = relations(users, ({ one }) => ({
 
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
-export const updateUserSchema = createUpdateSchema(users);
+export const updateUserSchema = createUpdateSchema(users, {
+  email: () => z.string().email("Email tidak valid").min(1, "Email tidak boleh kosong"),
+  profilePicture: () => z.string().url("URL tidak valid").min(1, "URL tidak boleh kosong"),
+});
 
 const validatePassword = z
   .string()
