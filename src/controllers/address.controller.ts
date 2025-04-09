@@ -1,16 +1,18 @@
 import { Response } from "express";
 import { IReqUser } from "../utils/interface";
 import response from "../utils/response";
-import { TypeAddress } from "../models";
-import { createAddress, findOneAddress, updateAddress } from "../service/address.service";
-import { findOneSantri, updateSantri } from "../service/santri.service";
-import { STATUS_SANTRI } from "../utils/enum";
+
+import { SANTRI_STATUS } from "../utils/enum";
+import { insertAddressSchema, InsertAddressSchemaType, updateAddressSchema, UpdateAddressSchemaType } from "../models";
+import addressService from "../service/address.service";
+import santriService from "../service/santri.service";
 
 export default {
   async create(req: IReqUser, res: Response) {
     try {
-      const data = req.body as TypeAddress;
-      const result = await createAddress(data);
+      const data: InsertAddressSchemaType = req.body;
+      insertAddressSchema.parse(data);
+      const result = await addressService.create(data);
       response.success(res, result, "Create Address Success");
     } catch (error) {
       response.error(res, error, "Error Create Address");
@@ -18,20 +20,22 @@ export default {
   },
   async createMe(req: IReqUser, res: Response) {
     try {
-      const data = req.body as TypeAddress;
-      const payload = {
-        ...data,
-        santriId: req.user?.santriId,
-      } as TypeAddress;
+      const santriId = req.user?.santriId;
+      if (!santriId) throw new Error("Santri ID is missing");
 
-      const result = await createAddress(payload);
+      const payload: InsertAddressSchemaType = {
+        ...req.body,
+        santriId,
+      };
+      insertAddressSchema.parse(payload);
 
-      const santri = await findOneSantri({ id: req.user?.santriId as number });
-      await updateSantri(
-        req.user?.santriId as number,
-        {},
-        santri?.status === STATUS_SANTRI.COMPLETED_PROFILE ? STATUS_SANTRI.COMPLETED_ADDRESS : santri?.status
-      );
+      const result = await addressService.create(payload);
+
+      const santri = await santriService.findOne({ id: santriId });
+      const nextStatus = santri?.status === SANTRI_STATUS.PROFILE_COMPLETED ? SANTRI_STATUS.ADDRESS_COMPLETED : santri?.status;
+
+      await santriService.update(santriId, {}, nextStatus);
+
       response.success(res, result, "Create Address Success");
     } catch (error) {
       response.error(res, error, "Error Create Address");
@@ -39,47 +43,66 @@ export default {
   },
   async findOne(req: IReqUser, res: Response) {
     try {
-      const { id } = req.params;
-      const result = await findOneAddress(+id);
+      const id = Number(req.params.id);
+      const result = await addressService.findOne(id);
       response.success(res, result, "Get Address Success");
     } catch (error) {
       response.error(res, error, "Error Get Address");
     }
   },
+
   async findMe(req: IReqUser, res: Response) {
     try {
-      const result = await findOneAddress(req.user?.santriId as number);
+      const santriId = req.user?.santriId;
+      if (!santriId) throw new Error("Santri ID is missing");
+
+      const result = await addressService.findOne(santriId);
       response.success(res, result, "Get Address Success");
     } catch (error) {
       response.error(res, error, "Error Get Address");
     }
   },
+
   async update(req: IReqUser, res: Response) {
     try {
-      const { id } = req.params;
-      const data = req.body as Partial<TypeAddress>;
-      const result = await updateAddress(+id, data);
+      const id = Number(req.params.id);
+      const data: InsertAddressSchemaType = req.body;
+      updateAddressSchema.parse(data);
+
+      const result = await addressService.update(id, data);
       response.success(res, result, "Update Address Success");
     } catch (error) {
       response.error(res, error, "Error Update Address");
     }
   },
+
   async updateMe(req: IReqUser, res: Response) {
     try {
-      const data = req.body as Partial<TypeAddress>;
+      const santriId = req.user?.santriId;
+      if (!santriId) throw new Error("Santri ID is missing");
 
-      const result = await updateAddress(req.user?.santriId as number, data);
-      const santri = await findOneSantri({ id: req.user?.santriId as number });
-      await updateSantri(
-        req.user?.santriId as number,
-        {},
-        santri?.status === STATUS_SANTRI.COMPLETED_PROFILE ? STATUS_SANTRI.COMPLETED_ADDRESS : santri?.status
-      );
+      const data: UpdateAddressSchemaType = req.body;
+      updateAddressSchema.parse(data);
+      const result = await addressService.update(santriId, data);
+
+      const santri = await santriService.findOne({ id: santriId });
+      const nextStatus = santri?.status === SANTRI_STATUS.PROFILE_COMPLETED ? SANTRI_STATUS.ADDRESS_COMPLETED : santri?.status;
+
+      await santriService.update(santriId, {}, nextStatus);
 
       response.success(res, result, "Update Address Success");
     } catch (error) {
       response.error(res, error, "Error Update Address");
     }
   },
-  async delete(req: IReqUser, res: Response) {},
+
+  async delete(req: IReqUser, res: Response) {
+    try {
+      const id = Number(req.params.id);
+      const result = await addressService.delete(id);
+      response.success(res, result, "Delete Address Success");
+    } catch (error) {
+      response.error(res, error, "Error Delete Address");
+    }
+  },
 };

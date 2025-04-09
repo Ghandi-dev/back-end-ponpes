@@ -1,17 +1,20 @@
 import { Response } from "express";
 import { IReqUser } from "../utils/interface";
-import { fileDTO, TypeFiles } from "../models";
-import { createFile, findOneFile, updateFile } from "../service/file.service";
 import response from "../utils/response";
-import { findOneSantri, updateSantri } from "../service/santri.service";
-import { STATUS_SANTRI } from "../utils/enum";
+import { SANTRI_STATUS } from "../utils/enum";
+import { insertFileSchema, InsertFileSchemaType, UpdateFileSchemaType, updateUserSchema } from "../models";
+import fileService from "../service/file.service";
+import santriService from "../service/santri.service";
 
 export default {
   async create(req: IReqUser, res: Response) {
     try {
-      const data = req.body as TypeFiles;
-      fileDTO.parse(data);
-      const result = await createFile(data);
+      const santriId = req.user?.santriId;
+      const data: InsertFileSchemaType = { ...req.body, santriId };
+
+      insertFileSchema.parse(data);
+
+      const result = await fileService.create(data);
       response.success(res, result, "Create Files Success");
     } catch (error) {
       response.error(res, error, "Error Create Files");
@@ -19,16 +22,23 @@ export default {
   },
   async createMe(req: IReqUser, res: Response) {
     try {
-      const data = req.body as TypeFiles;
       const santriId = req.user?.santriId;
-      fileDTO.parse(data);
-      const payload = {
+      const data: InsertFileSchemaType = { ...req.body, santriId };
+
+      if (!santriId) throw new Error("Santri ID is missing");
+      insertFileSchema.parse(data);
+      const payload: InsertFileSchemaType = {
         ...data,
         santriId,
-      } as TypeFiles;
-      const result = await createFile(payload);
-      const santri = await findOneSantri({ id: req.user?.santriId as number });
-      await updateSantri(req.user?.santriId as number, {}, santri?.status === STATUS_SANTRI.COMPLETED_ADDRESS ? STATUS_SANTRI.COMPLETED_FILE : santri?.status);
+      };
+
+      const result = await fileService.create(payload);
+      const santri = await santriService.findOne({ id: req.user?.santriId as number });
+      await santriService.update(
+        req.user?.santriId as number,
+        {},
+        santri?.status === SANTRI_STATUS.ADDRESS_COMPLETED ? SANTRI_STATUS.FILES_COMPLETED : santri?.status
+      );
       response.success(res, result, "Create Files Success");
     } catch (error) {
       response.error(res, error, "Error Create Files");
@@ -36,7 +46,7 @@ export default {
   },
   async findMe(req: IReqUser, res: Response) {
     try {
-      const result = await findOneFile(req.user?.santriId as number);
+      const result = await fileService.findOne(req.user?.santriId as number);
       response.success(res, result, "Get Files Success");
     } catch (error) {
       response.error(res, error, "Error Get Files");
@@ -44,8 +54,9 @@ export default {
   },
   async updateMe(req: IReqUser, res: Response) {
     try {
-      const data = req.body as Partial<TypeFiles>;
-      const result = await updateFile(req.user?.santriId as number, data);
+      const data: UpdateFileSchemaType = req.body;
+      updateUserSchema.parse(data);
+      const result = await fileService.update(req.user?.santriId as number, data);
       response.success(res, result, "Update Files Success");
     } catch (error) {
       response.error(res, error, "Error Update Files");

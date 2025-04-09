@@ -1,7 +1,6 @@
 import { Request } from "express";
 import { InferSelectModel } from "drizzle-orm";
-import { user } from "../models/user.model";
-import { santri } from "../models";
+import { users } from "../models/user.model";
 
 export interface IReqUser extends Request {
   user?: IUserToken;
@@ -9,7 +8,7 @@ export interface IReqUser extends Request {
 
 export interface IUserToken
   extends Omit<
-    InferSelectModel<typeof user>,
+    InferSelectModel<typeof users>,
     "password" | "activationCode" | "isActive" | "email" | "fullname" | "profilePicture" | "createdAt" | "updatedAt"
   > {
   id: number;

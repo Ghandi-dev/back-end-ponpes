@@ -1,72 +1,86 @@
-import { pgTable, serial, integer, varchar, date, text, pgEnum } from "drizzle-orm/pg-core";
-import { user } from "./user.model"; // Pastikan path sesuai dengan file schema user
-import { GENDERS, STATUS_SANTRI } from "../utils/enum";
-import { relations } from "drizzle-orm";
+import { pgTable, serial, integer, varchar, date, text, pgEnum, timestamp, index } from "drizzle-orm/pg-core";
+import { users } from "./user.model"; // Pastikan path sesuai dengan file schema user
+import { relations, sql } from "drizzle-orm";
 import { z } from "zod";
 import { address } from "./address.model";
 import { payment } from "./payment.model";
+import { createInsertSchema, createSelectSchema, createUpdateSchema } from "drizzle-zod";
+import { files } from "./file.model";
+import { parents } from "./parent.model";
 
-export const santri = pgTable("santri", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id")
-    .references(() => user.id, { onDelete: "cascade" })
-    .notNull()
-    .unique(),
-  fullname: text("fullname").notNull(),
-  placeOfBirth: varchar("place_of_birth", { length: 255 }),
-  dateOfBirth: date("date_of_birth"),
-  gender: text("gender", { enum: [GENDERS.MALE, GENDERS.FEMALE] }),
-  schoolOrigin: varchar("school_origin", { length: 255 }),
-  nisn: varchar("nisn", { length: 20 }),
-  nik: varchar("nik", { length: 20 }),
-  nationality: varchar("nationality", { length: 100 }),
-  phoneNumber: varchar("phone_number", { length: 20 }),
-  familyCardNumber: varchar("family_card_number", { length: 20 }),
-  status: text("status", {
-    enum: [
-      STATUS_SANTRI.PENDING_REGISTRATION,
-      STATUS_SANTRI.COMPLETED_PROFILE,
-      STATUS_SANTRI.COMPLETED_ADDRESS,
-      STATUS_SANTRI.COMPLETED_FILE,
-      STATUS_SANTRI.PAYMENT_PENDING,
-      STATUS_SANTRI.PAYMENT_CONFIRMED,
-      STATUS_SANTRI.RE_REGISTRATION_PENDING,
-      STATUS_SANTRI.RE_REGISTERED,
-      STATUS_SANTRI.ACTIVE_SANTRI,
-      STATUS_SANTRI.INACTIVE,
-    ],
-  }).notNull(),
-});
+export enum GENDERS {
+  MALE = "male",
+  FEMALE = "female",
+}
 
-export type TypeSantri = typeof santri.$inferInsert;
+export enum SANTRI_STATUS {
+  PENDING_REGISTRATION = "pending_registration",
+  PROFILE_COMPLETED = "profile_completed",
+  ADDRESS_COMPLETED = "address_completed",
+  FILES_COMPLETED = "files_completed",
+  PAYMENT_COMPLETED = "payment_completed",
+  RE_REGISTERED = "re_registered",
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+}
+
+export const santri = pgTable(
+  "santri",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull()
+      .unique(),
+    fullname: text("fullname").notNull(),
+    placeOfBirth: varchar("place_of_birth", { length: 255 }),
+    dateOfBirth: date("date_of_birth"),
+    gender: text("gender", { enum: [GENDERS.MALE, GENDERS.FEMALE] }),
+    schoolOrigin: varchar("school_origin", { length: 255 }),
+    nisn: varchar("nisn", { length: 20 }),
+    nik: varchar("nik", { length: 20 }),
+    nationality: varchar("nationality", { length: 100 }),
+    phoneNumber: varchar("phone_number", { length: 20 }),
+    familyCardNumber: varchar("family_card_number", { length: 20 }),
+    status: text("status", {
+      enum: [
+        SANTRI_STATUS.PENDING_REGISTRATION,
+        SANTRI_STATUS.PROFILE_COMPLETED,
+        SANTRI_STATUS.ADDRESS_COMPLETED,
+        SANTRI_STATUS.FILES_COMPLETED,
+        SANTRI_STATUS.PAYMENT_COMPLETED,
+        SANTRI_STATUS.RE_REGISTERED,
+        SANTRI_STATUS.ACTIVE,
+        SANTRI_STATUS.INACTIVE,
+      ],
+    }).notNull(),
+    createdAt: timestamp("created_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [index("idx_fullname").on(table.fullname)]
+);
 
 export const santriRelations = relations(santri, ({ one, many }) => ({
-  user: one(user, { fields: [santri.userId], references: [user.id] }),
+  user: one(users, { fields: [santri.userId], references: [users.id] }),
   address: one(address, { fields: [santri.id], references: [address.santriId] }),
+  files: one(files, { fields: [santri.id], references: [files.santriId] }),
+  parent: one(parents, { fields: [santri.id], references: [parents.santriId] }),
   payment: many(payment),
 }));
 
-export const santriDTO = z.object({
-  placeOfBirth: z.string().min(1, "Place of birth is required"),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
-  gender: z.enum([GENDERS.MALE, GENDERS.FEMALE]),
-  schoolOrigin: z.string().min(1, "School origin is required"),
-  nisn: z.string().min(1, "NISN is required"),
-  nik: z.string().min(1, "NIK is required"),
-  nationality: z.string().min(1, "Nationality is required"),
-  phoneNumber: z.string().min(1, "Phone number is required"),
-  familyCardNumber: z.string().min(1, "Family card number is required"),
-});
+// Zod schema for insert
+export const insertSantriSchema = createInsertSchema(santri);
 
-export const santriUpdateDTO = z.object({
-  fullname: z.string().optional(),
-  placeOfBirth: z.string().optional(),
-  dateOfBirth: z.string().optional(),
-  gender: z.enum([GENDERS.MALE, GENDERS.FEMALE]).optional(),
-  schoolOrigin: z.string().optional(),
-  nisn: z.string().optional(),
-  nik: z.string().optional(),
-  nationality: z.string().optional(),
-  phoneNumber: z.string().optional(),
-  familyCardNumber: z.string().optional(),
-});
+// Zod schema for select
+export const selectSantriSchema = createSelectSchema(santri);
+export const updateSantriSchema = createUpdateSchema(santri);
+
+// Types
+export type InsertSantriSchemaType = typeof insertSantriSchema._type;
+export type SelectSantriSchemaType = typeof selectSantriSchema._type;
+export type UpdateSantriSchemaType = typeof updateSantriSchema._type;

@@ -1,16 +1,17 @@
 import { Response } from "express";
 import { IReqUser } from "../utils/interface";
 import response from "../utils/response";
-import { deleteSantri, findManySantri, findOneSantri, updateSantri } from "../service/santri.service";
-import { santriUpdateDTO, TypeSantri } from "../models";
-import { STATUS_SANTRI } from "../utils/enum";
+
+import { SANTRI_STATUS } from "../utils/enum";
+import santriService from "../service/santri.service";
+import { updateSantriSchema, UpdateSantriSchemaType } from "../models";
 
 export default {
   async create(req: IReqUser, res: Response) {},
   async findAll(req: IReqUser, res: Response) {
     try {
       const { page = 1, limit = 10, search } = req.query;
-      const santriList = await findManySantri(+page, +limit, search as string);
+      const santriList = await santriService.findMany(+page, +limit, search as string);
       response.pagination(
         res,
         santriList.data,
@@ -28,7 +29,7 @@ export default {
   async findOne(req: IReqUser, res: Response) {
     try {
       const { id } = req.params;
-      const santri = await findOneSantri({ id: +id });
+      const santri = await santriService.findOne({ id: +id });
       if (!santri) {
         return response.notFound(res, "Santri not found");
       }
@@ -41,7 +42,7 @@ export default {
     try {
       const santriId = req.user?.santriId;
 
-      const result = await findOneSantri({ id: santriId as number });
+      const result = await santriService.findOne({ id: santriId as number });
       if (!result) {
         return response.unauthorized(res, "Santri not found");
       }
@@ -53,15 +54,16 @@ export default {
   async update(req: IReqUser, res: Response) {
     try {
       const { id } = req.params;
-      const data = req.body as Partial<TypeSantri>;
+      const data = req.body as UpdateSantriSchemaType;
+      updateSantriSchema.parse(data);
       if (data.status) {
         return response.error(res, null, "Status cannot be updated");
       }
-      const santri = await findOneSantri({ id: +id });
+      const santri = await santriService.findOne({ id: +id });
       if (!santri) {
         return response.notFound(res, "Santri not found");
       }
-      const result = await updateSantri(+id, data);
+      const result = await santriService.update(+id, data);
       response.success(res, result, "Update Santri Success");
     } catch (error) {
       response.error(res, error, "Error Update Santri");
@@ -70,17 +72,16 @@ export default {
   async updateMe(req: IReqUser, res: Response) {
     try {
       const santriId = req.user?.santriId;
-      const data = req.body as Partial<TypeSantri>;
+      const data = req.body as UpdateSantriSchemaType;
+      updateSantriSchema.parse(data);
       if (data.status) {
         return response.error(res, null, "Status cannot be updated");
       }
-
-      santriUpdateDTO.parse(data);
-      const santri = await findOneSantri({ id: santriId });
-      const result = await updateSantri(
+      const santri = await santriService.findOne({ id: santriId });
+      const result = await santriService.update(
         santriId!,
         data,
-        santri?.status === STATUS_SANTRI.PENDING_REGISTRATION ? STATUS_SANTRI.COMPLETED_PROFILE : santri?.status
+        santri?.status === SANTRI_STATUS.PENDING_REGISTRATION ? SANTRI_STATUS.PROFILE_COMPLETED : santri?.status
       );
       response.success(res, result, "Update Profile Santri Success");
     } catch (error) {
@@ -90,7 +91,7 @@ export default {
   async delete(req: IReqUser, res: Response) {
     try {
       const { id } = req.params;
-      const result = await deleteSantri(+id);
+      const result = await santriService.delete(+id);
       response.success(res, result, "Delete Santri Success");
     } catch (error) {
       response.error(res, error, "Error Delete Santri");

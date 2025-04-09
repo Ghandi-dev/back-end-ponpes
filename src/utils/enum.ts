@@ -8,15 +8,24 @@ export enum ROLES {
   SANTRI = "santri",
 }
 
-export enum STATUS_SANTRI {
-  PENDING_REGISTRATION = "pending_registration", // Akun baru dibuat, belum mengisi data pribadi
-  COMPLETED_PROFILE = "completed_profile", // Sudah mengisi data pribadi
-  COMPLETED_ADDRESS = "completed_address", // Sudah mengisi data alamat
-  COMPLETED_FILE = "completed_file", // Sudah mengisi data file
-  PAYMENT_PENDING = "payment_pending", // Menunggu pembayaran pendaftaran
-  PAYMENT_CONFIRMED = "payment_confirmed", // Pembayaran dikonfirmasi
-  RE_REGISTRATION_PENDING = "re_registration_pending", // Menunggu daftar ulang
-  RE_REGISTERED = "re_registered", // Sudah daftar ulang
-  ACTIVE_SANTRI = "active_santri", // Sudah menjadi santri aktif
-  INACTIVE = "inactive", // Status tidak aktif (misalnya mengundurkan diri)
+export enum SANTRI_STATUS {
+  PENDING_REGISTRATION = "pending_registration",
+  PROFILE_COMPLETED = "profile_completed",
+  ADDRESS_COMPLETED = "address_completed",
+  FILES_COMPLETED = "files_completed",
+  PAYMENT_COMPLETED = "payment_completed", // Sedang dalam tahap pembayaran registrasi
+  RE_REGISTERED = "re_registered",
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+}
+
+export enum STATUS_PAYMENT {
+  PENDING = "pending",
+  COMPLETED = "completed",
+  CANCELED = "canceled",
+}
+
+export enum TYPE_PAYMENT {
+  REGISTRATION = "registration",
+  SPP = "spp",
 }

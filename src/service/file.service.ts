@@ -1,15 +1,23 @@
 import { eq } from "drizzle-orm";
 import { db } from "../db";
-import { files, TypeFiles } from "../models";
+import { files, InsertFileSchemaType, UpdateFileSchemaType } from "../models";
 
-export const createFile = async (data: TypeFiles) => {
-  return await db.insert(files).values(data).returning();
+const fileService = {
+  create: async (data: InsertFileSchemaType) => {
+    return await db.insert(files).values(data).returning();
+  },
+
+  update: async (santriId: number, data: UpdateFileSchemaType) => {
+    return await db.update(files).set(data).where(eq(files.santriId, santriId)).returning();
+  },
+
+  findOne: async (santriId: number) => {
+    return (
+      (await db.query.files.findFirst({
+        where: eq(files.santriId, santriId),
+      })) ?? null
+    );
+  },
 };
 
-export const updateFile = async (santriId: number, data: Partial<TypeFiles>) => {
-  return await db.update(files).set(data).where(eq(files.santriId, santriId)).returning();
-};
-
-export const findOneFile = async (santriId: number) => {
-  return await db.query.files.findFirst({ where: eq(files.santriId, santriId) });
-};
+export default fileService;
