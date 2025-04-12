@@ -4,14 +4,32 @@ import response from "../utils/response";
 
 import { SANTRI_STATUS } from "../utils/enum";
 import santriService from "../service/santri.service";
-import { updateSantriSchema, UpdateSantriSchemaType } from "../models";
+import { santri, updateSantriSchema, UpdateSantriSchemaType } from "../models";
+import { and, ilike, inArray, SQL } from "drizzle-orm";
+import buildSearchQuery from "../utils/buildSearchQuery";
 
 export default {
   async create(req: IReqUser, res: Response) {},
   async findAll(req: IReqUser, res: Response) {
     try {
-      const { page = 1, limit = 10, search } = req.query;
-      const santriList = await santriService.findMany(+page, +limit, search as string);
+      const { page = 1, limit = 10, fullname, status } = req.query;
+      // Mengonversi status menjadi array jika ada
+      const statusArray: SANTRI_STATUS[] = status ? (status as string).split(",").map((s) => s.trim() as SANTRI_STATUS) : [];
+
+      // Membuat query filter dinamis
+      let where: SQL<unknown> | undefined = undefined;
+
+      // Menambahkan kondisi fullname jika ada
+      if (fullname) {
+        where = and(where, ilike(santri.fullname, `%${fullname}%`));
+      }
+
+      // Menambahkan kondisi status jika ada
+      if (statusArray.length > 0) {
+        where = and(where, inArray(santri.status, statusArray));
+      }
+
+      const santriList = await santriService.findMany(+page, +limit, where);
       response.pagination(
         res,
         santriList.data,

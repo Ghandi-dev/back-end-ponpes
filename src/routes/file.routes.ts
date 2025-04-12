@@ -8,9 +8,9 @@ const router = express.Router();
 
 router.post("/files/:id/santri", [authMiddleware, aclMiddleware([ROLES.ADMIN])], fileController.create);
 router.post("/files/me", [authMiddleware, aclMiddleware([ROLES.SANTRI])], fileController.createMe);
-// router.get("/files/:id/santri", [authMiddleware, aclMiddleware([ROLES.ADMIN])], fileController.findOne);
+router.get("/files/:id/santri", [authMiddleware, aclMiddleware([ROLES.ADMIN])], fileController.findOne);
 router.get("/files/me", [authMiddleware, aclMiddleware([ROLES.SANTRI])], fileController.findMe);
-// router.put("/files/:id/santri", [authMiddleware, aclMiddleware([ROLES.ADMIN])], fileController.update);
+router.put("/files/:id/santri", [authMiddleware, aclMiddleware([ROLES.ADMIN])], fileController.update);
 router.put("/files/me", [authMiddleware, aclMiddleware([ROLES.SANTRI])], fileController.updateMe);
 // router.delete("/files/:id/santri", [authMiddleware, aclMiddleware([ROLES.ADMIN])], fileController.delete);
 

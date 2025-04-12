@@ -1,8 +1,8 @@
-import { and, count, eq, ilike } from "drizzle-orm";
+import { and, count, eq, ilike, SQL } from "drizzle-orm";
 import { db } from "../db";
 import { InsertSantriSchemaType, santri, UpdateSantriSchemaType } from "../models";
 import { SANTRI_STATUS } from "../utils/enum";
-import { buildFilters } from "../utils/bulildFilter";
+import { buildFilters } from "../utils/buildFilter";
 
 const santriService = {
   create: async (data: InsertSantriSchemaType) => {
@@ -31,11 +31,11 @@ const santriService = {
     return await db.query.santri.findFirst({ where: and(...filters) });
   },
 
-  findMany: async (page = 1, limit = 10, search?: string) => {
-    const totalCount = await db.select({ count: count() }).from(santri);
+  findMany: async (page = 1, limit = 10, where?: SQL<unknown> | undefined) => {
+    const totalCount = await db.select({ count: count() }).from(santri).where(where);
     const totalPages = Math.ceil(totalCount[0].count / limit);
     const santriList = await db.query.santri.findMany({
-      where: search ? ilike(santri.fullname, `%${search}%`) : undefined,
+      where: where,
       limit,
       offset: (page - 1) * limit,
     });

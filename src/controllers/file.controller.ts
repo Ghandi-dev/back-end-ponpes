@@ -44,12 +44,32 @@ export default {
       response.error(res, error, "Error Create Files");
     }
   },
+  async findOne(req: IReqUser, res: Response) {
+    try {
+      const id = Number(req.params.id);
+      const result = await fileService.findOne(id);
+      response.success(res, result, "Get Files Success");
+    } catch (error) {
+      response.error(res, error, "Error Get Files");
+    }
+  },
   async findMe(req: IReqUser, res: Response) {
     try {
       const result = await fileService.findOne(req.user?.identifier as number);
       response.success(res, result, "Get Files Success");
     } catch (error) {
       response.error(res, error, "Error Get Files");
+    }
+  },
+  async update(req: IReqUser, res: Response) {
+    try {
+      const id = Number(req.params.id);
+      const data: UpdateFileSchemaType = req.body;
+      updateUserSchema.parse(data);
+      const result = await fileService.update(id, data);
+      response.success(res, result, "Update Files Success");
+    } catch (error) {
+      response.error(res, error, "Error Update Files");
     }
   },
   async updateMe(req: IReqUser, res: Response) {

@@ -3,7 +3,7 @@ import { admins, InsertUserSchemaType, santri, UpdateSantriSchemaType, UpdateUse
 import { and, count, eq, like } from "drizzle-orm";
 import { encrypt } from "../utils/encryption";
 import { ROLES, SANTRI_STATUS } from "../utils/enum";
-import { buildFilters } from "../utils/bulildFilter";
+import { buildFilters } from "../utils/buildFilter";
 
 const userService = {
   register: async (dataUser: InsertUserSchemaType, fullname: string) => {

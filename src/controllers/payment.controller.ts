@@ -5,11 +5,12 @@ import paymentService from "../service/payment.service";
 import { STATUS_PAYMENT, SANTRI_STATUS, TYPE_PAYMENT } from "../utils/enum";
 import { getId } from "../utils/id";
 import paymentUtils from "../utils/paymentUtils";
-import { InsertPaymentSchemaType } from "../models";
+import { InsertPaymentSchemaType, payment, santri } from "../models";
 import santriService from "../service/santri.service";
+import { and, eq, ilike, inArray, like, SQL } from "drizzle-orm";
 
 export default {
-  async create(req: IReqUser, res: Response) {
+  async createMe(req: IReqUser, res: Response) {
     try {
       const data = req.body as InsertPaymentSchemaType;
       const santriId = req.user?.identifier;
@@ -57,6 +58,65 @@ export default {
       response.success(res, result, "Get Registration Payment Success");
     } catch (error) {
       response.error(res, error, "Error Getting Registration Payment");
+    }
+  },
+
+  async findMe(req: IReqUser, res: Response) {
+    // implement me function
+  },
+
+  async findOne(req: IReqUser, res: Response) {
+    try {
+      const { paymentId } = req.params;
+      const result = await paymentService.findOne({ id: +paymentId });
+      response.success(res, result, "Get Payment Success");
+    } catch (error) {
+      response.error(res, error, "Error Getting Payment");
+    }
+  },
+
+  async findAll(req: IReqUser, res: Response) {
+    try {
+      const { page = 1, limit = 10, fullname, status, month, type } = req.query;
+      // Mengonversi status menjadi array jika ada
+      const statusArray: STATUS_PAYMENT[] = status ? (status as string).split(",").map((s) => s.trim() as STATUS_PAYMENT) : [];
+
+      // Membuat query filter dinamis
+      let where: SQL<unknown> | undefined = undefined;
+
+      // Menambahkan kondisi fullname jika ada
+      if (fullname) {
+        where = and(where, ilike(santri.fullname, `%${fullname}%`));
+      }
+
+      // Menambahkan kondisi type jika ada
+      if (type) {
+        where = and(where, eq(payment.type, type as TYPE_PAYMENT));
+      }
+
+      // Menambahkan kondisi month jika ada
+      if (month) {
+        where = and(where, eq(payment.month, +month));
+      }
+
+      // Menambahkan kondisi status jika ada
+      if (statusArray.length > 0) {
+        where = and(where, inArray(payment.status, statusArray));
+      }
+
+      const santriList = await paymentService.findMany(+page, +limit, where);
+      response.pagination(
+        res,
+        santriList.data,
+        {
+          total: santriList.totalData,
+          totalPages: santriList.totalPages,
+          current: santriList.currentPage,
+        },
+        "Get All Santri Success"
+      );
+    } catch (error) {
+      response.error(res, error, "Error Get All Santri");
     }
   },
 

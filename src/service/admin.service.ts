@@ -1,7 +1,7 @@
 import { and, count, eq, ilike } from "drizzle-orm";
 import { db } from "../db";
 import { InsertAdminSchemaType, admins, UpdateAdminSchemaType } from "../models";
-import { buildFilters } from "../utils/bulildFilter";
+import { buildFilters } from "../utils/buildFilter";
 
 const adminsService = {
   create: async (data: InsertAdminSchemaType) => {
