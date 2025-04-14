@@ -6,11 +6,17 @@ import paymentController from "../controllers/payment.controller";
 
 const router = express.Router();
 
-router.get("/payment", [authMiddleware, aclMiddleware([ROLES.ADMIN])], paymentController.findAll);
-router.post("/payment", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.createMe);
-router.get("/payment/me-registration", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.findMeRegistration);
-router.put("/payment/:paymentId/pending", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.pending);
-router.put("/payment/:paymentId/completed", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.completed);
-router.put("/payment/:paymentId/canceled", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.canceled);
+// ADMIN
+router.get("/payments", [authMiddleware, aclMiddleware([ROLES.ADMIN])], paymentController.findAll);
+
+// SANTRI (ME = current user)
+router.get("/my/payments", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.findMe);
+router.post("/my/payments", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.createMe);
+router.get("/my/payments/registration", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.findMeRegistration);
+
+// UPDATE PAYMENT STATUS
+router.put("/payments/:paymentId/pending", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.pending);
+router.put("/payments/:paymentId/completed", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.completed);
+router.put("/payments/:paymentId/canceled", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.canceled);
 
 export default router;

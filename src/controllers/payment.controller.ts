@@ -5,9 +5,9 @@ import paymentService from "../service/payment.service";
 import { STATUS_PAYMENT, SANTRI_STATUS, TYPE_PAYMENT } from "../utils/enum";
 import { getId } from "../utils/id";
 import paymentUtils from "../utils/paymentUtils";
-import { InsertPaymentSchemaType, payment, santri } from "../models";
+import { InsertPaymentSchemaType } from "../models";
 import santriService from "../service/santri.service";
-import { and, eq, ilike, inArray, like, SQL } from "drizzle-orm";
+import { buildPaymentFilters } from "../utils/buildFilter/buildPaymentFilters";
 
 export default {
   async createMe(req: IReqUser, res: Response) {
@@ -19,6 +19,7 @@ export default {
       const month = new Date().getMonth() + 1;
       const year = new Date().getFullYear();
       const amount = data.type === TYPE_PAYMENT.REGISTRATION ? 250000 : 500000;
+
       const paymentId = getId();
 
       const detail = await paymentUtils.createLink({
@@ -62,7 +63,27 @@ export default {
   },
 
   async findMe(req: IReqUser, res: Response) {
-    // implement me function
+    try {
+      const santriId = req.user?.identifier;
+      const { page = 1, limit = 10, ...query } = req.query;
+      // Panggil utility function untuk membangun filter
+      const where = buildPaymentFilters({ ...query, santriId });
+
+      const result = await paymentService.findMany(+page, +limit, where);
+
+      response.pagination(
+        res,
+        result.data,
+        {
+          total: result.totalData,
+          totalPages: result.totalPages,
+          current: result.currentPage,
+        },
+        "Get All Payment by Santri Success"
+      );
+    } catch (error) {
+      response.error(res, error, "Error Getting Payment");
+    }
   },
 
   async findOne(req: IReqUser, res: Response) {
@@ -77,46 +98,24 @@ export default {
 
   async findAll(req: IReqUser, res: Response) {
     try {
-      const { page = 1, limit = 10, fullname, status, month, type } = req.query;
-      // Mengonversi status menjadi array jika ada
-      const statusArray: STATUS_PAYMENT[] = status ? (status as string).split(",").map((s) => s.trim() as STATUS_PAYMENT) : [];
+      const { page = 1, limit = 10, ...query } = req.query;
 
-      // Membuat query filter dinamis
-      let where: SQL<unknown> | undefined = undefined;
+      // Panggil utility function untuk membangun filter
+      const where = buildPaymentFilters(query);
 
-      // Menambahkan kondisi fullname jika ada
-      if (fullname) {
-        where = and(where, ilike(santri.fullname, `%${fullname}%`));
-      }
-
-      // Menambahkan kondisi type jika ada
-      if (type) {
-        where = and(where, eq(payment.type, type as TYPE_PAYMENT));
-      }
-
-      // Menambahkan kondisi month jika ada
-      if (month) {
-        where = and(where, eq(payment.month, +month));
-      }
-
-      // Menambahkan kondisi status jika ada
-      if (statusArray.length > 0) {
-        where = and(where, inArray(payment.status, statusArray));
-      }
-
-      const santriList = await paymentService.findMany(+page, +limit, where);
+      const result = await paymentService.findMany(+page, +limit, where);
       response.pagination(
         res,
-        santriList.data,
+        result.data,
         {
-          total: santriList.totalData,
-          totalPages: santriList.totalPages,
-          current: santriList.currentPage,
+          total: result.totalData,
+          totalPages: result.totalPages,
+          current: result.currentPage,
         },
-        "Get All Santri Success"
+        "Get All Payment Success"
       );
     } catch (error) {
-      response.error(res, error, "Error Get All Santri");
+      response.error(res, error, "Error Get All Payment");
     }
   },
 
@@ -127,12 +126,18 @@ export default {
   async completed(req: IReqUser, res: Response) {
     try {
       const { paymentId } = req.params;
+      const payment = await paymentService.findOne({ paymentId });
+      if (payment?.status === STATUS_PAYMENT.COMPLETED) {
+        return response.error(res, null, "Payment already completed");
+      }
+
+      if (!payment) return response.notFound(res, "Payment not found");
       const result = await paymentService.update(paymentId, {
         status: STATUS_PAYMENT.COMPLETED,
       });
 
       const santriId = req.user?.identifier;
-      if (!santriId) throw new Error("Santri ID is missing");
+      if (!santriId) return response.unauthorized(res, "Santri ID is missing");
 
       const santri = await santriService.findOne({ id: santriId });
 
@@ -140,7 +145,7 @@ export default {
         await santriService.update(santriId, {}, SANTRI_STATUS.PAYMENT_COMPLETED);
       }
 
-      response.success(res, result, "Payment Completed");
+      return response.success(res, result, "Payment Completed");
     } catch (error) {
       response.error(res, error, "Error Completing Payment");
     }

@@ -5,6 +5,8 @@ import bodyParser from "body-parser";
 import router from "./routes/index";
 import errorMiddleware from "./middlewares/error.middleware";
 import { checkConnection } from "./db";
+import { runInitialSppCheck } from "./cron/init";
+import "./cron/index";
 
 const app = express();
 
@@ -32,6 +34,7 @@ async function init() {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
+    await runInitialSppCheck();
   } catch (error) {
     console.log(error);
   }

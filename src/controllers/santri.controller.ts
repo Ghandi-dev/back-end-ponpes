@@ -29,14 +29,14 @@ export default {
         where = and(where, inArray(santri.status, statusArray));
       }
 
-      const santriList = await santriService.findMany(+page, +limit, where);
+      const result = await santriService.findMany(+page, +limit, where);
       response.pagination(
         res,
-        santriList.data,
+        result.data,
         {
-          total: santriList.totalData,
-          totalPages: santriList.totalPages,
-          current: santriList.currentPage,
+          total: result.totalData,
+          totalPages: result.totalPages,
+          current: result.currentPage,
         },
         "Get All Santri Success"
       );
@@ -73,17 +73,17 @@ export default {
     try {
       const { id } = req.params;
       const data = req.body as UpdateSantriSchemaType;
+
       updateSantriSchema.parse(data);
-      if (data.status) {
-        return response.error(res, null, "Status cannot be updated");
-      }
       const santri = await santriService.findOne({ id: +id });
       if (!santri) {
         return response.notFound(res, "Santri not found");
       }
-      const result = await santriService.update(+id, data);
+      const result = await santriService.update(+id, data, data.status ?? santri.status);
       response.success(res, result, "Update Santri Success");
     } catch (error) {
+      console.log(error);
+
       response.error(res, error, "Error Update Santri");
     }
   },

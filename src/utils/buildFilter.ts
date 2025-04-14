@@ -6,6 +6,7 @@ export function buildFilters<T>(data: Partial<T>, columnMap: Partial<Record<keyo
   for (const key in data) {
     const column = columnMap[key];
     const value = data[key];
+
     if (column && value !== undefined) {
       filters.push(eq(column, value));
     }
