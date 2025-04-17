@@ -1,6 +1,6 @@
-import { and, count, eq, ilike, SQL } from "drizzle-orm";
+import { and, count, eq, SQL } from "drizzle-orm";
 import { db } from "../db";
-import { InsertSantriSchemaType, santri, UpdateSantriSchemaType } from "../models";
+import { InsertSantriSchemaType, santri, UpdateSantriSchemaType, users } from "../models";
 import { SANTRI_STATUS } from "../utils/enum";
 import { buildFilters } from "../utils/buildFilter";
 
@@ -18,7 +18,20 @@ const santriService = {
   },
 
   delete: async (id: number) => {
-    return await db.delete(santri).where(eq(santri.id, id));
+    return await db.transaction(async (tx) => {
+      // Ambil userId yang terkait dengan santri
+      const santriData = await tx.select({ userId: santri.userId }).from(santri).where(eq(santri.id, id)).limit(1);
+
+      const userId = santriData[0]?.userId;
+
+      // Hapus santri
+      await tx.delete(santri).where(eq(santri.id, id));
+
+      // Hapus user jika ada
+      if (userId) {
+        await tx.delete(users).where(eq(users.id, userId));
+      }
+    });
   },
 
   findOne: async (data: { id?: number; userId?: number }) => {

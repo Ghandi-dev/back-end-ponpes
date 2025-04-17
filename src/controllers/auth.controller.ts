@@ -60,7 +60,8 @@ export default {
       const { email, password } = req.body;
       const user = await userService.findOne({ email });
 
-      if (!user) return response.unauthorized(res, "User not found");
+      if (!user) return response.notFound(res, "User not found");
+
       if (!user.isActive) return response.unauthorized(res, "User is not active");
 
       const isPasswordValid = encrypt(password) === user.password;
@@ -70,11 +71,11 @@ export default {
 
       if (user.role === ROLES.ADMIN) {
         const admin = await adminsService.findOne({ userId: user.id });
-        if (!admin) return response.unauthorized(res, "Admin Not Found");
+        if (!admin) return response.notFound(res, "Admin Not Found");
         identifier = admin.id;
       } else {
         const santri = await santriService.findOne({ userId: user.id });
-        if (!santri) return response.unauthorized(res, "Santri Not Found");
+        if (!santri) return response.notFound(res, "Santri Not Found");
         identifier = santri.id;
       }
 
