@@ -6,6 +6,7 @@ import fileRoutes from "./file.routes";
 import mediaRoutes from "./media.routes";
 import paymentRoutes from "./payment.routes";
 import adminRoutes from "./admin.routes";
+import dashboardRoutes from "./dashboard.routes";
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use(fileRoutes);
 router.use(mediaRoutes);
 router.use(paymentRoutes);
 router.use(adminRoutes);
+router.use(dashboardRoutes);
 
 export default router;

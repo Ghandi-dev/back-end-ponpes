@@ -1,11 +1,42 @@
 import { and, count, eq, ilike } from "drizzle-orm";
 import { db } from "../db";
-import { InsertAdminSchemaType, admins, UpdateAdminSchemaType } from "../models";
+import { InsertAdminSchemaType, admins, UpdateAdminSchemaType, InsertUserSchemaType, users } from "../models";
 import { buildFilters } from "../utils/buildFilter";
+import { encrypt } from "../utils/encryption";
+import { ROLES } from "../utils/enum";
 
 const adminsService = {
-  create: async (data: InsertAdminSchemaType) => {
-    return await db.insert(admins).values(data).returning();
+  createAdminWithUser: async (userData: Omit<InsertUserSchemaType, "id">, adminData: Omit<InsertAdminSchemaType, "id" | "userId">) => {
+    return await db.transaction(async (tx) => {
+      const hashedPassword = encrypt(userData.password);
+
+      // 1. Insert ke tabel users
+      const insertedUsers = await tx
+        .insert(users)
+        .values({
+          ...userData,
+          isActive: true,
+          password: hashedPassword,
+          role: ROLES.ADMIN,
+        })
+        .returning();
+
+      const newUser = insertedUsers[0];
+
+      // 2. Insert ke tabel admins dengan relasi userId
+      const insertedAdmins = await tx
+        .insert(admins)
+        .values({
+          ...adminData,
+          userId: newUser.id,
+        })
+        .returning();
+
+      return {
+        user: newUser,
+        admin: insertedAdmins[0],
+      };
+    });
   },
 
   update: async (id: number, data?: UpdateAdminSchemaType) => {
@@ -17,7 +48,20 @@ const adminsService = {
   },
 
   delete: async (id: number) => {
-    return await db.delete(admins).where(eq(admins.id, id));
+    return await db.transaction(async (tx) => {
+      // Ambil userId yang terkait dengan admins
+      const santriData = await tx.select({ userId: admins.userId }).from(admins).where(eq(admins.id, id)).limit(1);
+
+      const userId = santriData[0]?.userId;
+
+      // Hapus admins
+      await tx.delete(admins).where(eq(admins.id, id));
+
+      // Hapus user jika ada
+      if (userId) {
+        await tx.delete(users).where(eq(users.id, userId));
+      }
+    });
   },
 
   findOne: async (data: { id?: number; userId?: number }) => {

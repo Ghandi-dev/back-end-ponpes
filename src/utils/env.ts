@@ -1,9 +1,18 @@
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({
+  path: process.env.NODE_ENV === "development" ? ".env.development" : ".env",
+});
 
 export const PORT: number = Number(process.env.PORT) || 3001;
 export const DATABASE_URL: string = process.env.DATABASE_URL || "";
+
+export const DATABASE_HOST: string = process.env.DATABASE_HOST || "localhost";
+export const DATABASE_PORT: number = Number(process.env.DATABASE_PORT) || 5432;
+export const DATABASE_USER: string = process.env.DATABASE_USER || "postgres";
+export const DATABASE_PASSWORD: string = process.env.DATABASE_PASSWORD || "postgres";
+export const DATABASE_NAME: string = process.env.DATABASE_NAME || "postgres";
+
 export const SECRET: string = process.env.SECRET || "";
 
 export const EMAIL_SMTP_SECURE: boolean = Boolean(process.env.EMAIL_SMTP_SECURE) || false;

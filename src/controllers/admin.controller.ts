@@ -2,13 +2,13 @@ import { Response } from "express";
 import { IReqUser } from "../utils/interface";
 import adminsService from "../service/admin.service";
 import response from "../utils/response";
-import { insertAdminSchema, updateAdminSchema } from "../models";
+import { updateAdminSchema } from "../models";
 
 export default {
   create: async (req: IReqUser, res: Response) => {
     try {
-      const data = await insertAdminSchema.parseAsync(req.body);
-      const result = await adminsService.create(data);
+      const dataUser = { ...req.body };
+      const result = await adminsService.createAdminWithUser(dataUser, dataUser);
       response.success(res, result, "Admin created successfully");
     } catch (error) {
       response.error(res, error, "Error creating admin");
@@ -78,8 +78,8 @@ export default {
 
   findMany: async (req: IReqUser, res: Response) => {
     try {
-      const { page = 1, limit = 10, search } = req.query;
-      const result = await adminsService.findMany(parseInt(page as string), parseInt(limit as string), search as string);
+      const { page = 1, limit = 10, fullname } = req.query;
+      const result = await adminsService.findMany(parseInt(page as string), parseInt(limit as string), fullname as string);
       if (!result) {
         return response.notFound(res, "Admins not found");
       }
