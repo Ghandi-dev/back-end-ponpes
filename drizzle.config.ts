@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
-import fs from "fs";
 
 export default defineConfig({
   out: "./drizzle",
@@ -14,7 +13,7 @@ export default defineConfig({
     password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE_NAME,
     ssl: {
-      ca: fs.readFileSync("ca.pem", "utf8"),
+      ca: process.env.CA_CERTIFICATE,
       rejectUnauthorized: true,
     },
     url: process.env.DATABASE_URL!,

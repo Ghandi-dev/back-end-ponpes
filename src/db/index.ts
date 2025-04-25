@@ -2,9 +2,8 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "../models/index";
 
-import fs from "fs";
-import { DATABASE_HOST, DATABASE_NAME, DATABASE_PASSWORD, DATABASE_PORT, DATABASE_USER } from "../utils/env";
-const CA_CERTIFICATION = fs.readFileSync("ca.pem", "utf8");
+import { CA_CERTIFICATE, DATABASE_HOST, DATABASE_NAME, DATABASE_PASSWORD, DATABASE_PORT, DATABASE_USER } from "../utils/env";
+const CA_CERTIFICATION = CA_CERTIFICATE;
 
 const client = new Pool({
   host: DATABASE_HOST,
