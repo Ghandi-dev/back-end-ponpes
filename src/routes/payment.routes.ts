@@ -15,6 +15,7 @@ router.post("/my/payments", [authMiddleware, aclMiddleware([ROLES.SANTRI])], pay
 router.get("/my/payments/registration", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.findMeRegistration);
 
 // UPDATE PAYMENT STATUS
+router.post("/payments/notification", paymentController.txNotification);
 router.put("/payments/:paymentId/pending", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.pending);
 router.put("/payments/:paymentId/completed", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.completed);
 router.put("/payments/:paymentId/canceled", [authMiddleware, aclMiddleware([ROLES.SANTRI])], paymentController.canceled);

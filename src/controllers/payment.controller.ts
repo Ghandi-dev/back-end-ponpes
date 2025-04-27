@@ -8,6 +8,8 @@ import paymentUtils from "../utils/paymentUtils";
 import { InsertPaymentSchemaType } from "../models";
 import santriService from "../service/santri.service";
 import { buildPaymentFilters } from "../utils/buildFilter/buildPaymentFilters";
+import crypto from "crypto";
+import { MIDTRANS_SERVER_KEY } from "../utils/env";
 
 export default {
   async createMe(req: IReqUser, res: Response) {
@@ -150,11 +152,44 @@ export default {
       response.error(res, error, "Error Completing Payment");
     }
   },
-
   async canceled(req: IReqUser, res: Response) {
     await updatePaymentStatus(req, res, STATUS_PAYMENT.CANCELED, "Canceled");
   },
+  async txNotification(req: IReqUser, res: Response) {
+    try {
+      const data = req.body;
+      paymentService.findOne({ paymentId: data.order_id }).then((payment) => {
+        if (payment) {
+          updatePaymentStatusByMidtrans(payment.paymentId, data).then((result) => {
+            console.log("Payment status updated:", result);
+          });
+        }
+      });
+      response.success(res, req.body, "Transaction Notification Success");
+    } catch (error) {
+      response.error(res, error, "Error Processing Transaction Notification");
+    }
+  },
 };
+
+async function updatePaymentStatusByMidtrans(order_id: string, data: any) {
+  const hash = crypto
+    .createHash("sha512")
+    .update(data.order_id + data.status_code + data.gross_amount + MIDTRANS_SERVER_KEY)
+    .digest("hex");
+  if (hash !== data.signature_key) {
+    throw new Error("Invalid signature key");
+  }
+
+  const transactionStatus = data.transaction_status;
+  const fraudStatus = data.fraud_status;
+  if (transactionStatus === "settlement" && fraudStatus === "accept") {
+    return await paymentService.update(order_id, { status: STATUS_PAYMENT.COMPLETED });
+  } else if (transactionStatus === "cancel" || transactionStatus === "deny" || transactionStatus === "expire") {
+    return await paymentService.update(order_id, { status: STATUS_PAYMENT.CANCELED });
+  }
+  return await paymentService.update(order_id, { status: STATUS_PAYMENT.PENDING });
+}
 
 // 🔁 Reusable function to reduce repetition
 async function updatePaymentStatus(req: IReqUser, res: Response, status: STATUS_PAYMENT, label: string) {

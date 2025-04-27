@@ -29,3 +29,10 @@ export enum TYPE_PAYMENT {
   REGISTRATION = "registration",
   SPP = "spp",
 }
+
+export enum MIDTRANS_STATUS {
+  CAPTURE = "capture",
+  CANCEL = "cancel",
+  DENY = "deny",
+  PENDING = "pending",
+}
