@@ -13,7 +13,7 @@ const client = new Pool({
   database: DATABASE_NAME,
   ssl: {
     ca: CA_CERTIFICATION,
-    rejectUnauthorized: true,
+    rejectUnauthorized: false,
   },
 });
 
