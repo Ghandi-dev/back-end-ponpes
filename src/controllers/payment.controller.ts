@@ -17,31 +17,7 @@ export default {
       const data = req.body as InsertPaymentSchemaType;
       const santriId = req.user?.identifier;
       if (!santriId) throw new Error("Santri ID is missing");
-
-      const month = new Date().getMonth() + 1;
-      const year = new Date().getFullYear();
-      const amount = data.type === TYPE_PAYMENT.REGISTRATION ? 250000 : 500000;
-
-      const paymentId = getId();
-
-      const detail = await paymentUtils.createLink({
-        transaction_details: {
-          gross_amount: amount,
-          order_id: paymentId,
-        },
-      });
-
-      const payload: InsertPaymentSchemaType = {
-        ...data,
-        santriId,
-        amount,
-        paymentId,
-        detail,
-        month,
-        year,
-      };
-
-      const result = await paymentService.create(payload);
+      const result = createPayment(data.type!, santriId);
       response.success(res, result, "Create Payment Success");
     } catch (error) {
       response.error(res, error, "Error Creating Payment");
@@ -152,9 +128,11 @@ export default {
       response.error(res, error, "Error Completing Payment");
     }
   },
+
   async canceled(req: IReqUser, res: Response) {
     await updatePaymentStatus(req, res, STATUS_PAYMENT.CANCELED, "Canceled");
   },
+
   async txNotification(req: IReqUser, res: Response) {
     try {
       const data = req.body;
@@ -171,6 +149,33 @@ export default {
     }
   },
 };
+
+export async function createPayment(type: TYPE_PAYMENT, santriId: number) {
+  const month = new Date().getMonth() + 1;
+  const year = new Date().getFullYear();
+  const amount = type === TYPE_PAYMENT.REGISTRATION ? 250000 : 500000;
+
+  const paymentId = getId();
+
+  const detail = await paymentUtils.createLink({
+    transaction_details: {
+      gross_amount: amount,
+      order_id: paymentId,
+    },
+  });
+
+  const payload: InsertPaymentSchemaType = {
+    type: TYPE_PAYMENT.SPP,
+    santriId,
+    amount,
+    paymentId,
+    detail,
+    month,
+    year,
+  };
+
+  return await paymentService.create(payload);
+}
 
 async function updatePaymentStatusByMidtrans(order_id: string, data: MidtransCallbackData, santriId: number) {
   const hash = crypto

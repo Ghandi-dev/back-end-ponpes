@@ -2,11 +2,12 @@ import { Response } from "express";
 import { IReqUser } from "../utils/interface";
 import response from "../utils/response";
 
-import { SANTRI_STATUS } from "../utils/enum";
+import { SANTRI_STATUS, TYPE_PAYMENT } from "../utils/enum";
 import santriService from "../service/santri.service";
 import { santri, updateSantriSchema, UpdateSantriSchemaType } from "../models";
 import { and, ilike, inArray, SQL } from "drizzle-orm";
 import buildSearchQuery from "../utils/buildSearchQuery";
+import { createPayment } from "./payment.controller";
 
 export default {
   async create(req: IReqUser, res: Response) {},
@@ -80,6 +81,9 @@ export default {
         return response.notFound(res, "Santri not found");
       }
       const result = await santriService.update(+id, data, data.status ?? santri.status);
+      if (data.status === SANTRI_STATUS.ACTIVE) {
+        await createPayment(TYPE_PAYMENT.SPP, santri.id);
+      }
       response.success(res, result, "Update Santri Success");
     } catch (error) {
       console.log(error);
