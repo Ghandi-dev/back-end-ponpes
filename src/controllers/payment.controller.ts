@@ -4,7 +4,7 @@ import response from "../utils/response";
 import paymentService from "../service/payment.service";
 import { STATUS_PAYMENT, SANTRI_STATUS, TYPE_PAYMENT } from "../utils/enum";
 import { getId } from "../utils/id";
-import paymentUtils from "../utils/paymentUtils";
+import paymentUtils, { MidtransCallbackData } from "../utils/paymentUtils";
 import { InsertPaymentSchemaType } from "../models";
 import santriService from "../service/santri.service";
 import { buildPaymentFilters } from "../utils/buildFilter/buildPaymentFilters";
@@ -158,37 +158,59 @@ export default {
   async txNotification(req: IReqUser, res: Response) {
     try {
       const data = req.body;
-      paymentService.findOne({ paymentId: data.order_id }).then((payment) => {
-        if (payment) {
-          updatePaymentStatusByMidtrans(payment.paymentId, data).then((result) => {
-            console.log("Payment status updated:", result);
-          });
-        }
-      });
-      response.success(res, req.body, "Transaction Notification Success");
+      const santriId = req.user?.identifier;
+
+      if (!santriId) {
+        return response.unauthorized(res, "Santri ID is missing");
+      }
+
+      const payment = await paymentService.findOne({ paymentId: data.order_id });
+
+      if (!payment) {
+        return response.notFound(res, "Payment not found");
+      }
+
+      await updatePaymentStatusByMidtrans(payment.paymentId, data, santriId);
+
+      return response.success(res, req.body, "Transaction Notification Success");
     } catch (error) {
-      response.error(res, error, "Error Processing Transaction Notification");
+      console.error("Error processing transaction notification:", error);
+      return response.error(res, error, "Error Processing Transaction Notification");
     }
   },
 };
 
-async function updatePaymentStatusByMidtrans(order_id: string, data: any) {
+async function updatePaymentStatusByMidtrans(order_id: string, data: MidtransCallbackData, santriId: number) {
   const hash = crypto
     .createHash("sha512")
     .update(data.order_id + data.status_code + data.gross_amount + MIDTRANS_SERVER_KEY)
     .digest("hex");
+
   if (hash !== data.signature_key) {
     throw new Error("Invalid signature key");
   }
 
-  const transactionStatus = data.transaction_status;
-  const fraudStatus = data.fraud_status;
-  if (transactionStatus === "settlement" && fraudStatus === "accept") {
-    return await paymentService.update(order_id, { status: STATUS_PAYMENT.COMPLETED });
-  } else if (transactionStatus === "cancel" || transactionStatus === "deny" || transactionStatus === "expire") {
-    return await paymentService.update(order_id, { status: STATUS_PAYMENT.CANCELED });
+  const { transaction_status, fraud_status } = data;
+
+  try {
+    if (transaction_status === "settlement" && fraud_status === "accept") {
+      await Promise.all([
+        paymentService.update(order_id, { status: STATUS_PAYMENT.COMPLETED }),
+        santriService.update(santriId, {}, SANTRI_STATUS.PAYMENT_COMPLETED),
+      ]);
+      return;
+    }
+
+    if (["cancel", "deny", "expire"].includes(transaction_status)) {
+      await paymentService.update(order_id, { status: STATUS_PAYMENT.CANCELED });
+      return;
+    }
+
+    await paymentService.update(order_id, { status: STATUS_PAYMENT.PENDING });
+  } catch (error) {
+    console.error(`Failed to update payment status for order_id ${order_id}`, error);
+    throw error;
   }
-  return await paymentService.update(order_id, { status: STATUS_PAYMENT.PENDING });
 }
 
 // 🔁 Reusable function to reduce repetition

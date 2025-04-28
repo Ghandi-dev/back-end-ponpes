@@ -13,6 +13,15 @@ export type TypeResponseMidtrans = {
   redirect_url: string;
 };
 
+export type MidtransCallbackData = {
+  order_id: string;
+  status_code: string;
+  gross_amount: string;
+  signature_key: string;
+  transaction_status: "settlement" | "pending" | "cancel" | "deny" | "expire";
+  fraud_status: "accept" | "deny" | "challenge";
+};
+
 export default {
   async createLink(payload: Payment): Promise<TypeResponseMidtrans> {
     const result = await axios.post<TypeResponseMidtrans>(MIDTRANS_TRANSACTION_URL, payload, {
