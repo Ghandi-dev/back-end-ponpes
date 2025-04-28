@@ -158,11 +158,9 @@ export default {
   async txNotification(req: IReqUser, res: Response) {
     try {
       const data = req.body;
-      const santriId = req.user?.identifier;
-      if (!santriId) return response.unauthorized(res, "Santri ID is missing");
       paymentService.findOne({ paymentId: data.order_id }).then((payment) => {
         if (payment) {
-          updatePaymentStatusByMidtrans(payment.paymentId, data, santriId).then((result) => {
+          updatePaymentStatusByMidtrans(payment.paymentId, data, payment.santriId).then((result) => {
             console.log("Payment status updated:", result);
           });
         }
