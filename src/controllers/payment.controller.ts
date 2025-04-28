@@ -159,23 +159,17 @@ export default {
     try {
       const data = req.body;
       const santriId = req.user?.identifier;
-
-      if (!santriId) {
-        return response.unauthorized(res, "Santri ID is missing");
-      }
-
-      const payment = await paymentService.findOne({ paymentId: data.order_id });
-
-      if (!payment) {
-        return response.notFound(res, "Payment not found");
-      }
-
-      await updatePaymentStatusByMidtrans(payment.paymentId, data, santriId);
-
-      return response.success(res, req.body, "Transaction Notification Success");
+      if (!santriId) return response.unauthorized(res, "Santri ID is missing");
+      paymentService.findOne({ paymentId: data.order_id }).then((payment) => {
+        if (payment) {
+          updatePaymentStatusByMidtrans(payment.paymentId, data, santriId).then((result) => {
+            console.log("Payment status updated:", result);
+          });
+        }
+      });
+      response.success(res, req.body, "Transaction Notification Success");
     } catch (error) {
-      console.error("Error processing transaction notification:", error);
-      return response.error(res, error, "Error Processing Transaction Notification");
+      response.error(res, error, "Error Processing Transaction Notification");
     }
   },
 };
@@ -192,25 +186,20 @@ async function updatePaymentStatusByMidtrans(order_id: string, data: MidtransCal
 
   const { transaction_status, fraud_status } = data;
 
-  try {
-    if (transaction_status === "settlement" && fraud_status === "accept") {
-      await Promise.all([
-        paymentService.update(order_id, { status: STATUS_PAYMENT.COMPLETED }),
-        santriService.update(santriId, {}, SANTRI_STATUS.PAYMENT_COMPLETED),
-      ]);
-      return;
-    }
-
-    if (["cancel", "deny", "expire"].includes(transaction_status)) {
-      await paymentService.update(order_id, { status: STATUS_PAYMENT.CANCELED });
-      return;
-    }
-
-    await paymentService.update(order_id, { status: STATUS_PAYMENT.PENDING });
-  } catch (error) {
-    console.error(`Failed to update payment status for order_id ${order_id}`, error);
-    throw error;
+  if (transaction_status === "settlement" && fraud_status === "accept") {
+    await paymentService.update(order_id, { status: STATUS_PAYMENT.COMPLETED });
+    await santriService.update(santriId, {}, SANTRI_STATUS.PAYMENT_COMPLETED);
+    return "Payment completed successfully";
   }
+
+  if (transaction_status === "cancel" || transaction_status === "deny" || transaction_status === "expire") {
+    await paymentService.update(order_id, { status: STATUS_PAYMENT.CANCELED });
+    return "Payment canceled successfully";
+  }
+
+  // Untuk selain itu (pending, dll)
+  await paymentService.update(order_id, { status: STATUS_PAYMENT.PENDING });
+  return "Payment status updated to pending";
 }
 
 // 🔁 Reusable function to reduce repetition
